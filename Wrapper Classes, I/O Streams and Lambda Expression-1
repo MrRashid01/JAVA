@@ -1,0 +1,234 @@
+import java.io.*;
+import java.util.*;
+
+public class Main {
+
+    // ---------- Part A: Sum of Integers Using Autoboxing and Unboxing ----------
+    public static void sumUsingAutoboxing() {
+        
+        Scanner scanner = new Scanner(System.in);
+        ArrayList<Integer> numbers = new ArrayList<>();
+
+        System.out.println("Enter integers (type 'done' to finish):");
+
+        while (true) {
+            String input = scanner.nextLine();
+            if (input.equalsIgnoreCase("done")) break;
+
+            try {
+                Integer number = Integer.parseInt(input);
+                numbers.add(number);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a valid integer.");
+            }
+        }
+
+        int sum = 0;
+        for (Integer num : numbers) {
+            sum += num;
+        }
+
+        System.out.println("Sum of entered integers: " + sum);
+    }
+
+    // ---------- Part B: Serialization and Deserialization of Student ----------
+    static class Student implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private int studentID;
+        private String name;
+        private double grade;
+
+        public Student(int studentID, String name, double grade) {
+            this.studentID = studentID;
+            this.name = name;
+            this.grade = grade;
+        }
+
+        public void displayStudent() {
+            System.out.println("Student ID: " + studentID);
+            System.out.println("Name: " + name);
+            System.out.println("Grade: " + grade);
+        }
+    }
+
+    public static void studentSerializationDemo() {
+        Student student = new Student(101, "Alice", 91.5);
+        String filename = "student.ser";
+
+        // Serialize
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(filename))) {
+            out.writeObject(student);
+            System.out.println("Student object serialized successfully.");
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        // Deserialize
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(filename))) {
+            Student deserializedStudent = (Student) in.readObject();
+            System.out.println("Student object deserialized successfully.");
+            deserializedStudent.displayStudent();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // ---------- Part C: Employee Management System Using File Handling ----------
+    static class Employee implements Serializable {
+        private static final long serialVersionUID = 2L;
+
+        private int id;
+        private String name;
+        private String designation;
+        private double salary;
+
+        public Employee(int id, String name, String designation, double salary) {
+            this.id = id;
+            this.name = name;
+            this.designation = designation;
+            this.salary = salary;
+        }
+
+        public void displayEmployee() {
+            System.out.println("ID: " + id);
+            System.out.println("Name: " + name);
+            System.out.println("Designation: " + designation);
+            System.out.println("Salary: " + salary);
+            System.out.println("---------------------------");
+        }
+    }
+
+    static final String EMPLOYEE_FILE = "employees.dat";
+
+    public static void addEmployee(Scanner scanner) {
+        try {
+            System.out.print("Enter Employee ID: ");
+            int id = Integer.parseInt(scanner.nextLine());
+
+            System.out.print("Enter Name: ");
+            String name = scanner.nextLine();
+
+            System.out.print("Enter Designation: ");
+            String designation = scanner.nextLine();
+
+            System.out.print("Enter Salary: ");
+            double salary = Double.parseDouble(scanner.nextLine());
+
+            Employee emp = new Employee(id, name, designation, salary);
+
+            try (ObjectOutputStream oos = new AppendableObjectOutputStream(new FileOutputStream(EMPLOYEE_FILE, true))) {
+                oos.writeObject(emp);
+                System.out.println("Employee added successfully.");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter correct data.");
+        }
+    }
+
+    public static void displayAllEmployees() {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(EMPLOYEE_FILE))) {
+            System.out.println("\n--- Employee Records ---");
+            while (true) {
+                Employee emp = (Employee) ois.readObject();
+                emp.displayEmployee();
+            }
+        } catch (EOFException e) {
+            // End of file reached normally
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("No employee records found or error reading file.");
+        }
+    }
+
+    // Custom ObjectOutputStream to append objects without header corruption
+    static class AppendableObjectOutputStream extends ObjectOutputStream {
+        public AppendableObjectOutputStream(OutputStream out) throws IOException {
+            super(out);
+        }
+
+        @Override
+        protected void writeStreamHeader() throws IOException {
+            File f = new File(EMPLOYEE_FILE);
+            if (f.length() == 0) {
+                super.writeStreamHeader();
+            } else {
+                reset();
+            }
+        }
+    }
+
+    // ---------- Main Menu ----------
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        int choice;
+
+        do {
+            System.out.println("\n=== Nimbus Java Tasks Menu ===");
+            System.out.println("1. Sum of Integers Using Autoboxing and Unboxing");
+            System.out.println("2. Serialize and Deserialize Student Object");
+            System.out.println("3. Employee Management System");
+            System.out.println("4. Exit");
+            System.out.print("Select an option: ");
+
+            try {
+                choice = Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                choice = -1;
+            }
+
+            switch (choice) {
+                case 1:
+                    sumUsingAutoboxing();
+                    break;
+                case 2:
+                    studentSerializationDemo();
+                    break;
+                case 3:
+                    employeeManagementMenu(scanner);
+                    break;
+                case 4:
+                    System.out.println("Exiting program. Goodbye!");
+                    break;
+                default:
+                    System.out.println("Invalid choice, please try again.");
+            }
+        } while (choice != 4);
+
+        scanner.close();
+    }
+
+    // Sub-menu for Employee Management
+    public static void employeeManagementMenu(Scanner scanner) {
+        int empChoice;
+        do {
+            System.out.println("\n--- Employee Management System ---");
+            System.out.println("1. Add Employee");
+            System.out.println("2. Display All Employees");
+            System.out.println("3. Return to Main Menu");
+            System.out.print("Enter choice: ");
+
+            try {
+                empChoice = Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                empChoice = -1;
+            }
+
+            switch (empChoice) {
+                case 1:
+                    addEmployee(scanner);
+                    break;
+                case 2:
+                    displayAllEmployees();
+                    break;
+                case 3:
+                    System.out.println("Returning to main menu...");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Try again.");
+            }
+        } while (empChoice != 3);
+    }
+}
